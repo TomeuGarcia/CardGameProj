@@ -4,11 +4,16 @@ using UnityEngine;
 
 public abstract class Card : MonoBehaviour
 {
-    [SerializeField] Ability ability;
+    [SerializeField] public CardTransform cardTransform;
+
+    [SerializeField] private Ability[] abilities;
 
     public delegate void CardAbilityAction();
+    public event CardAbilityAction OnPlayed;
     public event CardAbilityAction OnTurnStart;
     public event CardAbilityAction OnTurnEnd;
+
+
 
 
     private void OnValidate()
@@ -18,8 +23,12 @@ public abstract class Card : MonoBehaviour
 
     private void Awake()
     {
-        ability.Init(this);
         Init();
+
+        foreach (Ability ability in abilities)
+        {
+            ability.Init(this);
+        }
     }
 
     protected virtual void TestInput()
@@ -32,6 +41,13 @@ public abstract class Card : MonoBehaviour
 
 
     protected abstract void Init();
+
+    public virtual void Play() // make abstract
+    {
+        //Destroy(gameObject);
+        gameObject.SetActive(false);
+    }
+
 
 
 }

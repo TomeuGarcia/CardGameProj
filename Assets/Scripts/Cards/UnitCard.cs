@@ -16,7 +16,15 @@ public class UnitCard : BoardCard
 
     protected override void Init()
     {
+        // randomize power (testing)
+        basePower = Random.Range(1, 10);
         ResetPower();
+    }
+
+    public override void Play()
+    {
+        //Destroy(gameObject);
+        //gameObject.SetActive(false);
     }
 
     private void ResetPower()
