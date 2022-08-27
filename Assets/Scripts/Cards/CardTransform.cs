@@ -4,67 +4,89 @@ using UnityEngine;
 
 public class CardTransform : MonoBehaviour
 {
-    [SerializeField] new Collider collider;
+    [SerializeField] private Card thisCard;
     [SerializeField] Transform meshTransform;
+    [SerializeField] Animator animator;
 
-    public int id { get; set; }
+    private bool eventsDisabled = false;
+
     public Vector3 Position => transform.position;
     public Vector3 MeshPosition => meshTransform.position;
 
 
-    public delegate void CardTransformAction(int id);
+    public delegate void CardTransformAction(Card thisCard);
     public event CardTransformAction OnPlayerMouseEnter;
     public event CardTransformAction OnPlayerMouseExit;
     public event CardTransformAction OnPlayerMouseClickDown;
     public event CardTransformAction OnPlayerMouseClickUp;
 
+    public event CardTransformAction OnEndMove;
+    public event CardTransformAction OnEndRotate;
+
 
 
     private void OnMouseEnter()
     {
-        if (OnPlayerMouseEnter != null) OnPlayerMouseEnter(id);
+        if (eventsDisabled) return;
+        if (OnPlayerMouseEnter != null) OnPlayerMouseEnter(thisCard);
     }
     
     private void OnMouseExit()
     {
-        if (OnPlayerMouseExit != null) OnPlayerMouseExit(id);
+        if (eventsDisabled) return; 
+        if (OnPlayerMouseExit != null) OnPlayerMouseExit(thisCard);
     }
 
     private void OnMouseDown()
     {
-        if (OnPlayerMouseClickDown != null) OnPlayerMouseClickDown(id);
+        if (eventsDisabled) return; 
+        if (OnPlayerMouseClickDown != null) OnPlayerMouseClickDown(thisCard);
     }
 
     private void OnMouseUp()
     {
-        if (OnPlayerMouseClickUp != null) OnPlayerMouseClickUp(id);
+        if (eventsDisabled) return; 
+        if (OnPlayerMouseClickUp != null) OnPlayerMouseClickUp(thisCard);
     }
 
 
-    public void MoveFromToPosition(Vector3 from, Vector3 to, float duration = 0.01f, bool disableCollider = false)
+    public void SetPosition(Vector3 pos)
+    {
+        transform.position = pos;
+    }
+
+    public void InstantMoveToMeshPosition()
+    {
+        transform.position = MeshPosition;
+        meshTransform.localPosition = Vector3.zero;
+    }
+
+    public void MoveFromToPosition(Vector3 from, Vector3 to, float duration = 0.01f, bool eventsDisabledForDuration = false)
     {
         transform.position = from;
-        StartCoroutine(DoMoveToPosition(to, duration, this.transform, disableCollider));
+        StartCoroutine(DoMoveToPosition(to, duration, this.transform, eventsDisabledForDuration));
     }
 
-    public void MoveToPosition(Vector3 to, float duration = 0.01f, bool disableCollider = false)
+    public void MoveToPosition(Vector3 to, float duration = 0.01f, bool eventsDisabledForDuration = false)
     {
-        StartCoroutine(DoMoveToPosition(to, duration, this.transform, disableCollider));
+        StartCoroutine(DoMoveToPosition(to, duration, this.transform, eventsDisabledForDuration));
     }
 
-    public void MoveMeshToOrigin(float duration = 0.01f, bool disableCollider = false)
+    public void MoveMeshToOrigin(float duration = 0.01f, bool eventsDisabledForDuration = false)
     {
-        StartCoroutine(DoMoveToPosition(Position, duration, meshTransform, disableCollider));
+        StartCoroutine(DoMoveToPosition(Position, duration, meshTransform, eventsDisabledForDuration));
     }
 
-    public void MoveMeshToPosition(Vector3 to, float duration = 0.01f, bool disableCollider = false)
+    public void MoveMeshToPosition(Vector3 to, float duration = 0.01f, bool eventsDisabledForDuration = false)
     {
-        StartCoroutine(DoMoveToPosition(to, duration, meshTransform, disableCollider));
+        StartCoroutine(DoMoveToPosition(to, duration, meshTransform, eventsDisabledForDuration));
     }
 
-    private IEnumerator DoMoveToPosition(Vector3 to, float duration, Transform transform, bool disableCollider)
+    
+
+    private IEnumerator DoMoveToPosition(Vector3 to, float duration, Transform transform, bool eventsDisabledForDuration)
     {
-        if (disableCollider) DisableCollider();
+        if (eventsDisabledForDuration) eventsDisabled = true;
 
         Vector3 from = transform.position;
 
@@ -80,7 +102,9 @@ public class CardTransform : MonoBehaviour
         }
         transform.position = to;
 
-        if (disableCollider) EnableCollider();
+        if (eventsDisabledForDuration) eventsDisabled = false;
+
+        if (OnEndMove != null) OnEndMove(thisCard);
     }
 
     public void MoveOriginToMeshPosition()
@@ -92,10 +116,10 @@ public class CardTransform : MonoBehaviour
 
     public void Rotate(Quaternion to, float duration = 0.01f)
     {
-        StartCoroutine(DoRotate(to, duration));
+        StartCoroutine(DoRotate(to, duration, meshTransform));
     }
 
-    private IEnumerator DoRotate(Quaternion to, float duration)
+    private IEnumerator DoRotate(Quaternion to, float duration, Transform transform)
     {
         Quaternion from = transform.rotation;
 
@@ -110,17 +134,22 @@ public class CardTransform : MonoBehaviour
             yield return null;
         }
         transform.rotation = to;
+
+        if (OnEndRotate != null) OnEndRotate(thisCard);
     }
 
 
-    public void EnableCollider()
+
+    public void PlayDeckShuffleAnimation(float delayDuration = 0.0f)
     {
-        collider.enabled = true;
+        StartCoroutine(DoPlayDeckShuffleAnimation(delayDuration));
     }
 
-    public void DisableCollider()
+    private IEnumerator DoPlayDeckShuffleAnimation(float delayDuration)
     {
-        collider.enabled = false;
+        animator.SetTrigger("DeckShuffleReady");
+        yield return new WaitForSeconds(delayDuration);
+        animator.SetTrigger("DeckShuffle");
     }
 
 }

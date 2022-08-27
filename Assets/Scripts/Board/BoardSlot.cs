@@ -11,26 +11,4 @@ public class BoardSlot : MonoBehaviour
     public Vector3 CardPosition => transform.position;// + (Vector3.up * 0.3f);
 
 
-    public delegate void BoardSlotAction(BoardSlot thisBoardSlot);
-    public event BoardSlotAction OnPlayerMouseClickDown;
-
-
-    private void OnMouseDown()
-    {
-        if (OnPlayerMouseClickDown != null) OnPlayerMouseClickDown(this);
-    }
-
-
-
-    public void LightOn()
-    {
-        // TODO
-    }
-
-    public void LightOff()
-    {
-        // TODO
-    }
-
-
 }

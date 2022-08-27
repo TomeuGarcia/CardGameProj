@@ -6,9 +6,16 @@ public class Deck : MonoBehaviour
 {
     [SerializeField] private List<Card> cards;
 
-    public bool IsEmpty => cards.Count == 0;
+    public bool HasCards => cards.Count > 0;
 
-    public bool testingIsClicked = false;
+
+    public delegate void DeckAction(Deck thisDeck);
+    public event DeckAction OnCardDrawDemand;
+    public event DeckAction OnPlayerMouseClickDown;
+
+    
+
+
 
     private void Awake()
     {
@@ -18,19 +25,13 @@ public class Deck : MonoBehaviour
 
     private void OnMouseDown()
     {
-        testingIsClicked = true;
-    }
-    private void OnMouseUp()
-    {
-        testingIsClicked = false;
+        if (OnCardDrawDemand != null) OnCardDrawDemand(this);
     }
 
 
     public void AddCard(ref Card card)
     {
         cards.Add(card);
-
-        card.cardTransform.DisableCollider();
     }
 
     public Card DrawTopCard()
@@ -41,9 +42,8 @@ public class Deck : MonoBehaviour
     private Card DrawCard(int cardI)
     {
         Card card = cards[cardI];
-        cards.RemoveAt(cardI);
+        cards.RemoveAt(cardI);        
 
-        card.cardTransform.EnableCollider();
         return card;
     }
 
@@ -74,13 +74,17 @@ public class Deck : MonoBehaviour
     private void ArrangeCards()
     {
         float length = cards.Count;
-        float gapSizeY = 0.05f;
+        float gapSizeY = 0.02f;
         float startDisplacement = length * gapSizeY + gapSizeY / 2.0f;
         
 
         for (int i = cards.Count - 1; i >= 0; --i)
         {
             Vector3 endPos = transform.position + new Vector3(0, startDisplacement - (i * gapSizeY), 0);
+
+            //cards[i].cardTransform.SetPosition(endPos);
+            //cards[i].cardTransform.PlayDeckShuffleAnimation((length - i) / length);
+
             cards[i].cardTransform.MoveToPosition(endPos, 0.3f);
         }
 

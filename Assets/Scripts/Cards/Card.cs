@@ -6,7 +6,11 @@ public abstract class Card : MonoBehaviour
 {
     [SerializeField] public CardTransform cardTransform;
 
-    [SerializeField] private Ability[] abilities;
+    [SerializeField] protected Ability[] abilities;
+
+    public enum CardType { Unit, Special };
+    public CardType cardType { get; protected set; }
+
 
     public delegate void CardAbilityAction();
     public event CardAbilityAction OnPlayed;
@@ -25,29 +29,23 @@ public abstract class Card : MonoBehaviour
     {
         Init();
 
-        foreach (Ability ability in abilities)
+        for (int i = 0; i < abilities.Length; ++i)
         {
-            ability.Init(this);
-        }
-    }
-
-    protected virtual void TestInput()
-    {
-        if (Input.GetKeyDown(KeyCode.W))
-        {
-            if (OnTurnEnd != null) OnTurnEnd();
+            abilities[i] = Instantiate(abilities[i]);
+            abilities[i].Init(this);
         }
     }
 
 
     protected abstract void Init();
 
-    public virtual void Play() // make abstract
+    public abstract void Play();
+
+    public abstract void QueryIfCanBePlayed();
+
+    protected void InvokeOnPlayed()
     {
-        //Destroy(gameObject);
-        gameObject.SetActive(false);
+        if (OnPlayed != null) OnPlayed();
     }
-
-
 
 }

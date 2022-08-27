@@ -5,74 +5,88 @@ using UnityEngine;
 public class Hand : MonoBehaviour
 {
     [SerializeField] private List<Card> cards;
-    private int selectedCardI = -1;
+    
+    public Card selectedCard { get; private set; }
+    public bool HasSelectedCard => selectedCard != null;
 
-    public bool HasSelectedCard => selectedCardI != -1;
-    public Card SelectedCard => cards[selectedCardI]; 
 
     private static Vector3 selectedDirection = new Vector3(2.0f, 0.0f, 2.0f);
-    private static Vector3 hoveredDirection = new Vector3(0.0f, 0.0f, 0.2f);
-
-    bool testingPlayedCard = false;
+    private static Vector3 hoveredDirection = new Vector3(0.0f, 0.1f, 0.2f);
 
 
-    public bool HandUpdate(out Card card)
+    public delegate void HandAction();
+    public event HandAction OnCardSelected;
+    public event HandAction OnCardUnselected;
+
+
+
+    private void Update()
     {
-        //if (Input.GetKeyDown(KeyCode.LeftArrow))
-        //{
-        //    DecrementSelectedCard();
-        //    ArrangeCards();
-        //}
-        //else if (Input.GetKeyDown(KeyCode.RightArrow))
-        //{
-        //    IncrementSelectedCard();
-        //    ArrangeCards();
-        //}
-
-        //if (Input.GetKeyDown(KeyCode.UpArrow) && cards.Count > 0)
-        //{
-        //    PlaySelectedCard();
-        //    DecrementSelectedCard();
-        //    ArrangeCards();
-        //    return true;
-        //}
-
-        if (Input.GetMouseButton(1) && selectedCardI != -1)
+        if (Input.GetMouseButton(1) && HasSelectedCard)
         {
-            ArrangeUnhoveredCard(selectedCardI);
+            ArrangeUnhoveredCard(selectedCard);
             UnselectCard();
             ArrangeCards();
         }
 
-        if (testingPlayedCard)
-        {
-            testingPlayedCard = false;
-            card = cards[selectedCardI];
-            return true;
-        }
-
-
-
-        card = null;
-        return false;
     }
 
-    private void EnableCardEvents(Card card)
+    private void EnableArrangeCardEvents(Card card)
     {
         card.cardTransform.OnPlayerMouseEnter += ArrangeHoveredCard;
         card.cardTransform.OnPlayerMouseExit += ArrangeUnhoveredCard;
-        card.cardTransform.OnPlayerMouseClickDown += SelectCard;
-        card.cardTransform.OnPlayerMouseClickDown += ArrangeSelectedCard;
+        
         //card.cardTransform.OnPlayerMouseClickDown += TryPlayCard;
     }
 
-    private void DisableCardEvents(Card card)
+    private void DisableArrangeCardEvents(Card card)
     {
         card.cardTransform.OnPlayerMouseEnter -= ArrangeHoveredCard;
         card.cardTransform.OnPlayerMouseExit -= ArrangeUnhoveredCard;
-        card.cardTransform.OnPlayerMouseClickDown -= SelectCard;
-        card.cardTransform.OnPlayerMouseClickDown -= ArrangeSelectedCard;
+
         //card.cardTransform.OnPlayerMouseClickDown -= TryPlayCard;
+    }
+
+
+    private void QueryCardCanBePlayed(Card card)
+    {
+        card.QueryIfCanBePlayed();
+    }
+
+    public void ProceedSelectCardToPlay(Card card)
+    {
+        SelectCard(card);
+        ArrangeSelectedCard(card);
+    }
+
+    private void EnableSelectionCardEvents(Card card)
+    {
+        card.cardTransform.OnPlayerMouseClickDown += QueryCardCanBePlayed;
+        //card.cardTransform.OnPlayerMouseClickDown += SelectCard;
+        //card.cardTransform.OnPlayerMouseClickDown += ArrangeSelectedCard;
+    }
+
+    private void DisableSelectionCardEvents(Card card)
+    {
+        card.cardTransform.OnPlayerMouseClickDown -= QueryCardCanBePlayed; 
+        //card.cardTransform.OnPlayerMouseClickDown -= SelectCard;
+        //card.cardTransform.OnPlayerMouseClickDown -= ArrangeSelectedCard;
+    }
+
+    public void EnableCardsSelection()
+    {
+        foreach (Card card in cards)
+        {
+            EnableSelectionCardEvents(card);
+        }
+    }
+
+    public void DisableCardsSelection()
+    {
+        foreach (Card card in cards)
+        {
+            DisableSelectionCardEvents(card);
+        }
     }
 
 
@@ -81,122 +95,121 @@ public class Hand : MonoBehaviour
     public void AddCard(Card card)
     {
         cards.Add(card);
-        card.cardTransform.id = cards.Count - 1;
-        EnableCardEvents(card);
-        ArrangeCards();
+        EnableArrangeCardEvents(card);
+        //ArrangeCards();
     }
 
-    public void PlayLeftmostCard()
-    {
-        PlayCard(0);
-    }
 
-    public void PlaySelectedCard()
+    public void RemoveSelectedCard()
     {
-        PlayCard(selectedCardI);
-    }
+        cards.Remove(selectedCard);
 
-    private void PlayCard(int cardI)
-    {
-        Card card = cards[cardI];
-        cards.RemoveAt(selectedCardI);
-
+        //DisableArrangeCardEvents(selectedCard);
+        EnableNonSelectedCardsInteraction();
         ArrangeCards();
 
-        DisableCardEvents(card);
-        card.Play();
+        selectedCard = null;
     }
 
 
-
-    private void TryPlayCard(int cardI)
-    {
-        return;
-        selectedCardI = cardI;
-        testingPlayedCard = true;
-
-        // TODO check if can play card
-        if (true) return;
-
-
-        PlayCard(cardI);
-        ArrangeCards();
-    }
 
 
     public void ArrangeCards()
     {
         float length = cards.Count;
-        float gapSizeX = 0.75f;
-        float startDisplacement = -length / 2.0f + gapSizeX / 2.0f;
+        float ratio = Mathf.Min(5.0f / length, 1.0f);
+
+        float gapSizeX = 0.65f * ratio;
+
+        float startDisplacementX = (-length * ratio / 2.0f) + (gapSizeX / 2.0f);
+
+        float gapSizeY = 0.02f;
+
+        Vector3 displacement = Vector3.right * startDisplacementX;
+
+        float fanAngle = 20.0f;
+        float startRotation = (-fanAngle / 2.0f);
+        Vector3 fanRotationStep = Vector3.up * (fanAngle / length);
+        Vector3 fanRotation = Vector3.up * startRotation - fanRotationStep / 2.0f;
 
         for (int i = 0; i < cards.Count; ++i)
         {
-            Vector3 endPos = transform.position + new Vector3(startDisplacement + (i * gapSizeX), 0, 0);
-            cards[i].cardTransform.id = i;
+            fanRotation += fanRotationStep;
+            Quaternion fan = Quaternion.Euler(fanRotation);
+            cards[i].cardTransform.Rotate(transform.rotation * fan, 0.1f);
+
+            displacement += Vector3.right * gapSizeX;
+            Vector3 endPos = transform.position + displacement;
+            endPos += transform.up * gapSizeY * i;
+            endPos += -transform.forward * Mathf.Sin(Mathf.Deg2Rad * fanRotation.magnitude);            
             cards[i].cardTransform.MoveToPosition(endPos, 0.1f, true);
-            cards[i].cardTransform.Rotate(transform.rotation, 0.3f);
         }
     }
 
-    private void ArrangeHoveredCard(int cardId)
+    private void ArrangeHoveredCard(Card card)
     {
-        Vector3 endPos = cards[cardId].cardTransform.Position + transform.TransformDirection(hoveredDirection);
-        cards[cardId].cardTransform.MoveMeshToPosition(endPos, 0.1f);
+        Vector3 endPos = card.cardTransform.Position + transform.TransformDirection(hoveredDirection);
+        card.cardTransform.MoveMeshToPosition(endPos, 0.1f);
     }
     
-    private void ArrangeUnhoveredCard(int cardId)
+    private void ArrangeUnhoveredCard(Card card)
     {
-        cards[cardId].cardTransform.MoveMeshToOrigin(0.1f);
+        card.cardTransform.MoveMeshToOrigin(0.1f);
     }
 
-    private void ArrangeSelectedCard(int cardId)
+    private void ArrangeSelectedCard(Card card)
     {
         Vector3 endPos = transform.position + transform.TransformDirection(selectedDirection);
-        cards[cardId].cardTransform.MoveMeshToPosition(endPos, 0.1f);
+        card.cardTransform.MoveMeshToPosition(endPos, 0.1f);
     }
 
 
-    private void SelectCard(int cardId)
+    private void SelectCard(Card card)
     {
-        selectedCardI = cardId;
-        cards[cardId].cardTransform.OnPlayerMouseExit -= ArrangeUnhoveredCard;
-        cards[cardId].cardTransform.OnPlayerMouseEnter -= ArrangeHoveredCard;
+        selectedCard = card;
 
         DisableNonSelectedCardsInteraction();
+
+        card.cardTransform.OnPlayerMouseExit -= ArrangeUnhoveredCard;
+        card.cardTransform.OnPlayerMouseEnter -= ArrangeHoveredCard;
+
+
+        if (OnCardSelected != null) OnCardSelected();
     }
 
     private void UnselectCard()
     {
+        if (OnCardUnselected != null) OnCardUnselected();
+
         EnableNonSelectedCardsInteraction();
 
-        cards[selectedCardI].cardTransform.OnPlayerMouseExit += ArrangeUnhoveredCard;
-        cards[selectedCardI].cardTransform.OnPlayerMouseEnter += ArrangeHoveredCard;
-        selectedCardI = -1;
+        selectedCard.cardTransform.OnPlayerMouseExit += ArrangeUnhoveredCard;
+        selectedCard.cardTransform.OnPlayerMouseEnter += ArrangeHoveredCard;
+        
+        selectedCard = null;
     }
 
 
     private void EnableNonSelectedCardsInteraction()
     {
-        for (int i = 0; i < selectedCardI; ++i)
+        for (int i = 0; i < cards.Count; ++i)
         {
-            EnableCardEvents(cards[i]);
-        }
-        for (int i = selectedCardI + 1; i < cards.Count; ++i)
-        {
-            EnableCardEvents(cards[i]);
+            if (cards[i] == selectedCard) continue;
+            EnableArrangeCardEvents(cards[i]);
+            //EnableSelectionCardEvents(cards[i]);
         }
     }
 
     private void DisableNonSelectedCardsInteraction()
     {
-        for (int i = 0; i < selectedCardI; ++i)
+        for (int i = 0; i < cards.Count; ++i)
         {
-            DisableCardEvents(cards[i]);
-        }
-        for (int i = selectedCardI + 1; i < cards.Count; ++i)
-        {
-            DisableCardEvents(cards[i]);
+            if (cards[i] == selectedCard)
+            {
+                continue;
+            }
+            DisableArrangeCardEvents(cards[i]);
+            DisableSelectionCardEvents(cards[i]);
         }
     }
 

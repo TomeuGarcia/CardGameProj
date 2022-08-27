@@ -10,9 +10,13 @@ public class PassButton : MonoBehaviour
     public delegate void PassButtonAction();
     public event PassButtonAction OnPass;
 
+    [HideInInspector] public bool canPass = false;
+
 
     private void OnMouseDown()
     {
+        if (!canPass) return;
+
         if (OnPass != null) OnPass();
 
         animator.SetTrigger("Pass");
