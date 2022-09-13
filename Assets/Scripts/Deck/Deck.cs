@@ -25,7 +25,10 @@ public class Deck : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (OnCardDrawDemand != null) OnCardDrawDemand(this);
+        if (HasCards)
+        {
+            if (OnCardDrawDemand != null) OnCardDrawDemand(this);
+        }            
     }
 
 
@@ -86,6 +89,8 @@ public class Deck : MonoBehaviour
             //cards[i].cardTransform.PlayDeckShuffleAnimation((length - i) / length);
 
             cards[i].cardTransform.MoveToPosition(endPos, 0.3f);
+
+            cards[i].cardTransform.Rotate(Quaternion.Euler(0f, Random.Range(-8f, 8f), 0f), 0.3f);
         }
 
     }

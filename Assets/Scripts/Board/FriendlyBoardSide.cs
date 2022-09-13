@@ -19,7 +19,7 @@ public class FriendlyBoardSide : BoardSide
 
     private void Awake()
     {
-        UpdateScoreText();
+        Init();
         GainEnergySpecialAbility.OnEnergyGain += AddPointsToScore;
     }
 
@@ -56,13 +56,8 @@ public class FriendlyBoardSide : BoardSide
 
     public void PlayCardInSelectedBoardSlot(UnitCard card)
     {
-        selectedBoardSlot.card = card;
-
-        card.cardTransform.InstantMoveToMeshPosition();
-        card.cardTransform.Rotate(Quaternion.identity, 0.1f);
-        card.cardTransform.MoveToPosition(selectedBoardSlot.CardPosition, 0.1f);
-
-        AddPointsToScore(-card.cost);
+        PlayCardAtBoardSlot(card, selectedBoardSlot);
+        SubtractPointsToScore(card.cost);
 
         selectedBoardSlot = null;
     }
@@ -111,18 +106,32 @@ public class FriendlyBoardSide : BoardSide
     }
 
 
-    public void PlaySpecialCard(SpecialCard card)
+    private void PlaySpecialCardAtTarget(SpecialCard card, Vector3 targetPos, float translationDuration = 0.1f, float animationDuration = 0.5f)
     {
         card.cardTransform.InstantMoveToMeshPosition();
-        card.cardTransform.Rotate(Quaternion.identity, 0.1f);
-        card.cardTransform.MoveToPosition(specialCardCastTarget.transform.position + Vector3.down, 0.1f);
+        card.cardTransform.Rotate(Quaternion.identity, translationDuration);
+        card.cardTransform.MoveToPosition(targetPos, translationDuration);
+
+        StartCoroutine(PlayedSpecialCardAnimation(card, translationDuration, animationDuration));
+    }
+
+    private IEnumerator PlayedSpecialCardAnimation(SpecialCard card, float waitDuration, float animationDuration)
+    {
+        yield return new WaitForSeconds(waitDuration);
+        card.PlayFadeAnimation(animationDuration);
+        yield return new WaitForSeconds(animationDuration);
+        card.gameObject.SetActive(false);
+    }
+
+
+    public void PlaySpecialCard(SpecialCard card)
+    {
+        PlaySpecialCardAtTarget(card, specialCardCastTarget.transform.position + Vector3.up * 0.5f, 0.1f, 0.5f);
     }
 
     public void PlaySpecialCardOnUnit(SpecialCard card)
     {
-        card.cardTransform.InstantMoveToMeshPosition();
-        card.cardTransform.Rotate(Quaternion.identity, 0.1f);
-        card.cardTransform.MoveToPosition(selectedBoardSlot.CardPosition + Vector3.down, 0.1f);
+        PlaySpecialCardAtTarget(card, selectedBoardSlot.CardPosition + Vector3.up * 0.5f, 0.1f, 0.5f);
 
         selectedBoardSlot = null;
     }

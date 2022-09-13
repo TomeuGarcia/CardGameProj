@@ -10,14 +10,21 @@ public class PassButton : MonoBehaviour
     public delegate void PassButtonAction();
     public event PassButtonAction OnPass;
 
+    public static event PassButtonAction OnPassPlayAudio;
+
     [HideInInspector] public bool canPass = false;
 
 
     private void OnMouseDown()
     {
-        if (!canPass) return;
+        if (canPass)
+            Pass(); 
+    }
 
+    private void Pass()
+    {
         if (OnPass != null) OnPass();
+        if (OnPassPlayAudio != null) OnPassPlayAudio();
 
         animator.SetTrigger("Pass");
     }

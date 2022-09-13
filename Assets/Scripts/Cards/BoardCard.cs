@@ -4,9 +4,6 @@ using UnityEngine;
 
 public abstract class BoardCard : Card
 {
-    public event CardAbilityAction OnDeploy;
-    public event CardAbilityAction OnDeath;
-
-
+    public event CardAction OnDeploy;
 
 }

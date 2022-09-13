@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CardTransform : MonoBehaviour
 {
-    [SerializeField] private Card thisCard;
+    private Card thisCard;
     [SerializeField] Transform meshTransform;
     [SerializeField] Animator animator;
 
@@ -49,6 +49,11 @@ public class CardTransform : MonoBehaviour
         if (OnPlayerMouseClickUp != null) OnPlayerMouseClickUp(thisCard);
     }
 
+
+    public void Init(Card thisCard)
+    {
+        this.thisCard = thisCard;
+    }
 
     public void SetPosition(Vector3 pos)
     {
@@ -150,6 +155,30 @@ public class CardTransform : MonoBehaviour
         animator.SetTrigger("DeckShuffleReady");
         yield return new WaitForSeconds(delayDuration);
         animator.SetTrigger("DeckShuffle");
+    }
+
+
+    public float PlayAttackAnimation(Vector3 forward)
+    {
+        float tA = 0.2f;
+        float tB = 0.2f;
+        float tC = 0.1f;
+        StartCoroutine(DoPlayAttackAnimation(tA, tB, tC, forward));
+        return tA + tB + tC;
+    }
+
+    private IEnumerator DoPlayAttackAnimation(float tA, float tB, float tC, Vector3 forward)
+    {
+        MoveMeshToPosition(Position + new Vector3(0f, 1f, 0f) + (forward * -0.5f), tA);
+        Rotate(Quaternion.Euler(new Vector3(-20f, 0f, -30f)), tA);        
+        yield return new WaitForSeconds(tA);
+
+        MoveMeshToPosition(Position + new Vector3(0f, 0.7f, 0f) + (forward * 0.5f), tB);
+        yield return new WaitForSeconds(tB);
+
+        MoveMeshToOrigin(tC);
+        Rotate(Quaternion.Euler(Vector3.zero), tC);
+        yield return new WaitForSeconds(tC);
     }
 
 }

@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec14d810a3d58724ea7029f262f4cfc6, type: 3}
+  m_Name: GainEnergy
+  m_EditorClassIdentifier: 
+  abilityDisplayPrefab: {fileID: 2338851797588020905, guid: 6017b2e9925c3c944ace8d3b863947b1, type: 3}
+  energyAmount: 1

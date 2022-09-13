@@ -4,14 +4,17 @@ using UnityEngine;
 
 public class Hand : MonoBehaviour
 {
-    [SerializeField] private List<Card> cards;
+    private List<Card> cards = new List<Card>();
     
     public Card selectedCard { get; private set; }
     public bool HasSelectedCard => selectedCard != null;
 
 
-    private static Vector3 selectedDirection = new Vector3(2.0f, 0.0f, 2.0f);
+    [SerializeField] private Transform selectedTransform;
+    //private static Vector3 selectedDirection = new Vector3(2.0f, 0.0f, 2.0f);
     private static Vector3 hoveredDirection = new Vector3(0.0f, 0.1f, 0.2f);
+
+    [SerializeField] public Transform spawnTransform;
 
 
     public delegate void HandAction();
@@ -117,15 +120,13 @@ public class Hand : MonoBehaviour
     public void ArrangeCards()
     {
         float length = cards.Count;
-        float ratio = Mathf.Min(5.0f / length, 1.0f);
+        float displacementRatio = Mathf.Min(3.0f / length, 1.0f);
 
-        float gapSizeX = 0.65f * ratio;
-
-        float startDisplacementX = (-length * ratio / 2.0f) + (gapSizeX / 2.0f);
-
+        float gapSizeX = 0.65f * displacementRatio;
         float gapSizeY = 0.02f;
 
-        Vector3 displacement = Vector3.right * startDisplacementX;
+        float startDisplacementX = (length * displacementRatio / 2.0f) - (gapSizeX / 2.0f);
+        Vector3 displacement = Vector3.left * startDisplacementX;
 
         float fanAngle = 20.0f;
         float startRotation = (-fanAngle / 2.0f);
@@ -142,7 +143,7 @@ public class Hand : MonoBehaviour
             Vector3 endPos = transform.position + displacement;
             endPos += transform.up * gapSizeY * i;
             endPos += -transform.forward * Mathf.Sin(Mathf.Deg2Rad * fanRotation.magnitude);            
-            cards[i].cardTransform.MoveToPosition(endPos, 0.1f, true);
+            cards[i].cardTransform.MoveToPosition(endPos, 0.2f, true);
         }
     }
 
@@ -159,8 +160,10 @@ public class Hand : MonoBehaviour
 
     private void ArrangeSelectedCard(Card card)
     {
-        Vector3 endPos = transform.position + transform.TransformDirection(selectedDirection);
-        card.cardTransform.MoveMeshToPosition(endPos, 0.1f);
+        //Vector3 endPos = transform.position + transform.TransformDirection(selectedDirection);
+        //card.cardTransform.MoveMeshToPosition(endPos, 0.1f);
+
+        card.cardTransform.MoveMeshToPosition(selectedTransform.position, 0.1f);
     }
 
 
@@ -213,6 +216,15 @@ public class Hand : MonoBehaviour
         }
     }
 
+
+
+    public void TriggerEndOfTurn()
+    {
+        foreach (Card card in cards)
+        {
+            card.InvokeOnTurnEnd();
+        }
+    }
 
 
 

@@ -10,12 +10,12 @@ public class HUD : MonoBehaviour
 
     private void OnEnable()
     {
-        PlayerTurnState.OnStateInit += playerTurn.SetTextContent;
+        TurnState.OnStateInit += playerTurn.SetTextContent;
     }
 
     private void OnDisable()
     {
-        PlayerTurnState.OnStateInit -= playerTurn.SetTextContent;
+        TurnState.OnStateInit -= playerTurn.SetTextContent;
     }
 
 
